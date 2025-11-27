@@ -48,5 +48,5 @@ zstd -T0 --rm ota/*
 find ota/* -size +2000M -exec split -b 2000M --numeric-suffixes {} {}. \; -delete
 
 # Echo tag name and release body
-echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+echo "tag=${TAG}-nubia" >> "$GITHUB_OUTPUT"
 echo "body=$BODY" >> "$GITHUB_OUTPUT"
