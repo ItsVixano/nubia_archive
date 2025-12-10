@@ -7,17 +7,27 @@
 set -ex
 
 # Extract full update
-aria2c -x5 $1 -o ota.zip
-unzip ota.zip payload.bin
-mv payload.bin payload_working.bin
-TAG="`unzip -p ota.zip build.prop | grep ro.build.sw_internal_version | cut -d= -f2`"
-BODY="[$TAG]($1) (full)"
-rm ota.zip
-mkdir ota
-(
-    ./bin/ota_extractor -output_dir ota -payload payload_working.bin
-    rm payload_working.bin
-) & # Allow subsequent downloads to be done in parallel
+if [[ "$1" == *.tar.zst ]]; then
+    aria2c -x5 $1 -o input.tar.zst
+    mkdir ota
+    tar -I zstd -xf input.tar.zst -C ota
+    TAG="${1##*/}"
+    TAG="${TAG%.tar.zst}"
+    BODY="[$TAG]($1) (full)"
+    rm input.tar.zst
+else
+    aria2c -x5 $1 -o ota.zip
+    unzip ota.zip payload.bin
+    mv payload.bin payload_working.bin
+    TAG="`unzip -p ota.zip build.prop | grep ro.build.sw_internal_version | cut -d= -f2`"
+    BODY="[$TAG]($1) (full)"
+    rm ota.zip
+    mkdir ota
+    (
+        ./bin/ota_extractor -output_dir ota -payload payload_working.bin
+        rm payload_working.bin
+    ) & # Allow subsequent downloads to be done in parallel
+fi
 
 # Apply incrementals
 for i in ${@:2}; do
